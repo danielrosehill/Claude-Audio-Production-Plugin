@@ -1,0 +1,12 @@
+{
+  "name": "audio-production",
+  "version": "1.0.0",
+  "description": "Audio production primitives — process, normalize, trim, concatenate, VAD-segment, transcribe, diarise, master, tag, and publish — with audio-engineering, podcast, and transcript workspace scaffolds.",
+  "author": {
+    "name": "Daniel Rosehill",
+    "url": "https://github.com/danielrosehill"
+  },
+  "repository": "https://github.com/danielrosehill/audio-production-plugin",
+  "license": "MIT",
+  "keywords": ["audio", "podcast", "transcription", "vad", "ffmpeg", "loudnorm", "ebur128"]
+}
