@@ -19,6 +19,7 @@ The plugin captures a reference voice sample for each microphone the user record
 - `/audio-production:profile-voice [--mic=<id>]` — analyse a mic's reference sample with `librosa`. Writes F0, spectral centroid, sibilance/mud band energy, resonant peaks, and (optionally) formants.
 - `/audio-production:suggest-eq --use-case=<podcast|vocals|spoken-word|broadcast> [--mic=<id>]` — translate the analysis into an EQ + dynamics preset and emit a 1-min A/B audition.
 - `/audio-production:audition-preset <preset>` — emit a fresh 1-min before/after WAV pair for any saved preset.
+- `/audio-production:tune-preset` — interactively narrow in on a preset by listening to 15s A/B variants (with side-by-side spectrograms). Iterate based on your feedback ("more presence", "less mud", "softer compression") until you're happy, then save the winner.
 - `/audio-production:list-presets` — list saved presets with a one-line summary of each chain.
 - `/audio-production:apply-preset <name> <input>` — run a saved preset against an audio file via ffmpeg.
 

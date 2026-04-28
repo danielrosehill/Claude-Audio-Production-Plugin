@@ -38,6 +38,7 @@ If multiple install paths are valid (e.g. `uv tool install` vs `pipx install` vs
 |---|---|---|---|
 | `praat-parselmouth` (Python) | profile-voice (formants) | `python3 -c "import parselmouth"` | `pip install --user praat-parselmouth` |
 | `silero-vad` (Python) | truncate-silence (ML engine) | `python3 -c "import silero_vad"` | `pip install --user silero-vad torch torchaudio` |
+| `matplotlib` (Python) | tune-preset (spectrogram rendering) | `python3 -c "import matplotlib"` | `pip install --user matplotlib` |
 | `sox` | some `trim-silence` paths | `which sox` | `sudo apt install sox` / `brew install sox` |
 | `typst` | export paths | `which typst` | `cargo install typst-cli` or download binary release |
 

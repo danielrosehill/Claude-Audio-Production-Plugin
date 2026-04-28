@@ -1,6 +1,6 @@
 {
   "name": "audio-production",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Audio engineering & production primitives — mic-bound voice profiling, EQ preset suggestion with A/B auditions, compression, de-essing, normalization, VAD segmentation, mastering, tagging, and podcast assembly. Persists mic profiles, presets, and auditions to a versioned user-data directory.",
   "author": {
     "name": "Daniel Rosehill",
