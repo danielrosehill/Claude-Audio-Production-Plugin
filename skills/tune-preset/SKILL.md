@@ -40,6 +40,7 @@ round-<n>/
   before.wav         # 15s reference clip (no processing)
   variant-a.wav      # 15s with variant A applied
   variant-b.wav      # 15s with variant B applied
+  compare.wav        # ["Sample 1"] + variant-a + ["Sample 2"] + variant-b — single-file A/B
   spectrogram-a.png  # 0–8 kHz log-magnitude spectrogram
   spectrogram-b.png
   diff.txt           # which parameters differ between A and B, in plain English
@@ -114,6 +115,22 @@ ffmpeg -y -i "round-<n>/before.wav" -af "<chain>" -c:a pcm_s16le "round-<n>/vari
 
 Always run on the round's `before.wav` (not the source) so the audition window is byte-identical between variants.
 
+#### 3b. Assemble the announced comparison clip
+
+Stitch the pre-generated TTS cues from `<PLUGIN_DATA_DIR>/tts/` around the variants so the user hears one self-explanatory file:
+
+```bash
+ffmpeg -y \
+  -i "<TTS_DIR>/sample-1.wav" \
+  -i "round-<n>/variant-a.wav" \
+  -i "<TTS_DIR>/sample-2.wav" \
+  -i "round-<n>/variant-b.wav" \
+  -filter_complex "[0:a][1:a][2:a][3:a]concat=n=4:v=0:a=1[out]" \
+  -map "[out]" -c:a pcm_s16le "round-<n>/compare.wav"
+```
+
+If the cue files don't exist (`<TTS_DIR>/sample-1.wav` missing), surface a one-line message — `Run /audio-production:generate-cues to create the announcement clips, or skip; variants are still in variant-a.wav / variant-b.wav` — and continue without `compare.wav`.
+
 #### 4. Render spectrograms
 
 Inline Python via heredoc, using `librosa.display.specshow` + matplotlib:
@@ -147,6 +164,8 @@ Print:
 - The round directory path.
 - Playback hints:
   ```
+  mpv "<round-dir>/compare.wav"            # single-file A/B with announcements
+  # or audition the variants individually:
   mpv "<round-dir>/variant-a.wav"
   mpv "<round-dir>/variant-b.wav"
   ```

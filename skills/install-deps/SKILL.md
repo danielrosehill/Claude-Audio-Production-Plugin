@@ -79,13 +79,14 @@ The canonical install set:
 | `silero-vad` | optional | truncate-silence (ML engine) |
 | `torch` `torchaudio` | optional | silero-vad backing |
 | `matplotlib` | optional | tune-preset (spectrogram rendering) |
+| `edge-tts` | optional | generate-cues (TTS announcements for A/B clips) |
 
 Stage:
 
 ```bash
 uv pip install --python "$VENV_DIR/bin/python" librosa numpy scipy deepfilternet
 # optional bundle:
-uv pip install --python "$VENV_DIR/bin/python" praat-parselmouth matplotlib
+uv pip install --python "$VENV_DIR/bin/python" praat-parselmouth matplotlib edge-tts
 # silero bundle (heavy — only if user wants ML silence detection):
 uv pip install --python "$VENV_DIR/bin/python" silero-vad torch torchaudio
 ```
@@ -135,6 +136,12 @@ Run each approved command, surfacing stdout/stderr. After each:
 - For system installs: re-run the detect command to verify.
 - For venv installs: `"$VENV_DIR/bin/python" -c "import <pkg>"` to verify importability.
 - If verification fails, stop and report — don't proceed to the next install.
+
+### 7b. Generate TTS comparison cues (optional)
+
+If `edge-tts` was installed (or `espeak-ng` is available) and `<PLUGIN_DATA_DIR>/tts/sample-1.wav` doesn't exist, ask the user whether to pre-generate the announcement clips now (one-time, takes a few seconds). On approval, hand off to `/audio-production:generate-cues`.
+
+These cues are stitched into A/B comparison files by `tune-preset` and `audition-preset` so you can identify variants by ear without checking the file paths.
 
 ### 8. Final verification table
 
