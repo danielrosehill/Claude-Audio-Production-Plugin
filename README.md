@@ -109,12 +109,11 @@ See [PLAN.md in Claude-Workspace-Reshaping-190426](https://github.com/danielrose
 ## Dependencies
 
 - `ffmpeg` and `ffprobe` — required for all audio processing
-- `python3` with `librosa` and `numpy` — required for voice profiling
-- `deepFilter` (DeepFilterNet) — required for ML denoise (`pip install --user deepfilternet` or `uv tool install deepfilternet`)
-- `praat-parselmouth` — optional, enables formant analysis
-- `silero-vad` (Python) — optional, ML-based silence truncation
+- `uv` — required for the plugin's Python venv (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - `sox` — optional, used by some `trim-silence` paths
 - `typst` — optional, used by some export paths
+
+All Python tooling — `librosa`, `numpy`, `scipy`, `deepfilternet`, optional `praat-parselmouth`, `matplotlib`, `silero-vad` — is installed by `/audio-production:install-deps` into a plugin-owned uv venv at `<data-dir>/venv/`. System Python is never modified.
 
 ## Install
 

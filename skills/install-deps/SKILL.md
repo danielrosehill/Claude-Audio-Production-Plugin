@@ -1,46 +1,25 @@
 ---
 name: install-deps
-description: Verify and (with user approval) install the system tools and Python packages this plugin depends on. Required tools — ffmpeg, librosa, numpy, deepfilternet. Optional — parselmouth (formants), silero-vad (better silence detection), sox, typst. Run before onboard or any time a command reports a missing dependency.
+description: Provision the plugin's tools — system binaries via the host package manager, all Python tools into a plugin-owned uv venv at <data-dir>/venv/. Idempotent doctor — run before onboard or any time a command reports a missing dep. Never touches system Python or fights PEP 668.
 disable-model-invocation: true
-allowed-tools: Bash(which *), Bash(command *), Bash(apt *), Bash(apt-get *), Bash(sudo *), Bash(pip *), Bash(pip3 *), Bash(uv *), Bash(pipx *), Bash(python3 *), Bash(ffmpeg *), Bash(ffprobe *), Bash(deepFilter *), Bash(sox *), Bash(typst *), Read, Write
+allowed-tools: Bash(which *), Bash(command *), Bash(apt *), Bash(apt-get *), Bash(sudo *), Bash(uv *), Bash(curl *), Bash(python3 *), Bash(ffmpeg *), Bash(ffprobe *), Bash(sox *), Bash(typst *), Read, Write
 ---
 
 # Install Dependencies
 
-Check the plugin's runtime dependencies and offer to install any that are missing.
+Two surfaces:
 
-## Approach
+1. **System binaries** — `ffmpeg`, optional `sox` / `typst`. Installed via the host package manager with explicit user approval.
+2. **Python tools** — `librosa`, `numpy`, `deepfilternet` (the `deepFilter` binary), optional `parselmouth`, `silero-vad`, `matplotlib`. Installed into a plugin-owned uv venv at `<data-dir>/venv/`.
 
-This skill never installs silently. For each missing dependency it:
+The plugin's commands always invoke Python via `<data-dir>/venv/bin/python` and `<data-dir>/venv/bin/deepFilter`, so the user's system Python stays untouched and PEP 668 / externally-managed-environment errors never occur.
 
-1. Detects the package manager available on the host (apt for Debian/Ubuntu, brew for macOS, pacman for Arch, dnf for Fedora).
-2. Detects whether `uv`, `pipx`, or plain `pip` is available for Python packages.
-3. Surfaces the exact command(s) it would run.
-4. Asks the user to approve before executing.
+## Resolve paths
 
-If multiple install paths are valid (e.g. `uv tool install` vs `pipx install` vs `pip install --user`), prefer the one already present on the system; otherwise prefer in the order: `uv` → `pipx` → `pip --user`.
-
-## Dependency matrix
-
-### Required
-
-| Tool | Used by | Detect | Install (Linux apt) | Install (macOS brew) |
-|---|---|---|---|---|
-| `ffmpeg` + `ffprobe` | every audio command | `which ffmpeg && which ffprobe` | `sudo apt install ffmpeg` | `brew install ffmpeg` |
-| Python 3.10+ | profile-voice, denoise | `python3 --version` | `sudo apt install python3` | preinstalled or `brew install python` |
-| `librosa` (Python) | profile-voice | `python3 -c "import librosa"` | `pip install --user librosa numpy` | same |
-| `numpy` (Python) | profile-voice | `python3 -c "import numpy"` | covered by librosa install | same |
-| `deepfilternet` (binary `deepFilter`) | denoise (default engine) | `which deepFilter` | `uv tool install deepfilternet` or `pipx install deepfilternet` | same |
-
-### Optional
-
-| Tool | Used by | Detect | Install |
-|---|---|---|---|
-| `praat-parselmouth` (Python) | profile-voice (formants) | `python3 -c "import parselmouth"` | `pip install --user praat-parselmouth` |
-| `silero-vad` (Python) | truncate-silence (ML engine) | `python3 -c "import silero_vad"` | `pip install --user silero-vad torch torchaudio` |
-| `matplotlib` (Python) | tune-preset (spectrogram rendering) | `python3 -c "import matplotlib"` | `pip install --user matplotlib` |
-| `sox` | some `trim-silence` paths | `which sox` | `sudo apt install sox` / `brew install sox` |
-| `typst` | export paths | `which typst` | `cargo install typst-cli` or download binary release |
+```bash
+PLUGIN_DATA_DIR="${CLAUDE_USER_DATA:-${XDG_DATA_HOME:-$HOME/.local/share}/claude-plugins}/audio-production"
+VENV_DIR="$PLUGIN_DATA_DIR/venv"
+```
 
 ## Procedure
 
@@ -49,84 +28,165 @@ If multiple install paths are valid (e.g. `uv tool install` vs `pipx install` vs
 ```bash
 uname -s   # Linux / Darwin
 which apt-get apt brew dnf pacman 2>/dev/null
-which uv pipx pip3 2>/dev/null
+which uv 2>/dev/null
 ```
 
 Record what's available; this drives which install commands you propose.
 
-### 2. Walk the matrix
+### 2. Ensure `uv` is available
 
-For each row in **Required**:
+`uv` is the only hard prerequisite for the Python side. If missing, propose installing it:
 
-- Run the detect command.
-- If present: report `✓ <tool>` with version where readily available.
-- If missing: stage an install command for that tool, tagged `[required]`.
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-Then for each row in **Optional**:
+Ask before running. If the user declines, fall back to system pip with `--break-system-packages` or an apt-installed `python3-venv` + manual `python3 -m venv`. Document the fallback path but prefer `uv`.
 
-- Run the detect command.
-- If present: report `✓ <tool> (optional)`.
-- If missing: stage an install command tagged `[optional]`. These will be presented but not required.
+### 3. Walk the system-binary matrix
 
-### 3. Present the plan
+| Tool | Detect | Required? | Install (apt) | Install (brew) |
+|---|---|---|---|---|
+| `ffmpeg` + `ffprobe` | `which ffmpeg && which ffprobe` | required | `sudo apt install ffmpeg` | `brew install ffmpeg` |
+| `sox` | `which sox` | optional | `sudo apt install sox` | `brew install sox` |
+| `typst` | `which typst` | optional | `cargo install typst-cli` (or download binary) | `brew install typst` |
 
-Print a summary block:
+For each: if missing, stage the install command tagged required/optional.
+
+### 4. Provision the venv
+
+If `<VENV_DIR>` doesn't exist:
+
+```bash
+uv venv "$VENV_DIR" --python 3.11
+```
+
+Pinning to Python 3.11 avoids the moving target of system Python upgrades. If `uv` selects a different version (e.g. user only has 3.13), accept that — note it in the report.
+
+If `<VENV_DIR>` exists, leave it. The venv is the persistent home for plugin Python tooling.
+
+### 5. Install Python packages into the venv
+
+The canonical install set:
+
+| Package | Required? | Used by |
+|---|---|---|
+| `librosa` | required | profile-voice, tune-preset |
+| `numpy` | required | profile-voice, tune-preset |
+| `scipy` | required | profile-voice (peak finding) |
+| `deepfilternet` | required | denoise (default engine), polish --mode=noisy |
+| `praat-parselmouth` | optional | profile-voice (formants) |
+| `silero-vad` | optional | truncate-silence (ML engine) |
+| `torch` `torchaudio` | optional | silero-vad backing |
+| `matplotlib` | optional | tune-preset (spectrogram rendering) |
+
+Stage:
+
+```bash
+uv pip install --python "$VENV_DIR/bin/python" librosa numpy scipy deepfilternet
+# optional bundle:
+uv pip install --python "$VENV_DIR/bin/python" praat-parselmouth matplotlib
+# silero bundle (heavy — only if user wants ML silence detection):
+uv pip install --python "$VENV_DIR/bin/python" silero-vad torch torchaudio
+```
+
+Or, simpler (uses the venv's interpreter without the explicit `--python` flag):
+
+```bash
+source "$VENV_DIR/bin/activate"
+uv pip install librosa numpy scipy deepfilternet
+```
+
+Either form is fine — pick whichever the user's shell handles cleanly.
+
+### 6. Present the plan and approve
+
+Print a summary block before running anything:
 
 ```
-Already installed:
+Plugin venv: <VENV_DIR> (python 3.11)
+
+System binaries already installed:
   ✓ ffmpeg 6.1.1
-  ✓ python3 3.13
-  ✓ librosa 0.11.0
-  ✓ numpy 2.0.0
 
-Will install (required):
-  [apt]   sudo apt install ffmpeg
-  [pipx]  pipx install deepfilternet
+Will install (system, required):
+  [apt]  sudo apt install ffmpeg                 ← if ffmpeg missing
 
-Will install (optional, can skip):
-  [pip]   pip install --user praat-parselmouth
-  [pip]   pip install --user silero-vad torch torchaudio
+Will install into venv (required):
+  uv pip install librosa numpy scipy deepfilternet
+
+Will install into venv (optional):
+  uv pip install praat-parselmouth matplotlib
+
+Skipping unless requested:
+  silero-vad torch torchaudio   (large, only needed for ML silence detection)
 ```
 
-Then ask the user three questions:
+Ask the user three questions:
 
 1. Proceed with required installs? (y/N)
-2. Also install optional packages? (y/N)
-3. If apt commands are present and the user is on Linux: confirm sudo is OK.
+2. Also install the optional bundle? (y/N)
+3. Install the silero bundle? (y/N)
 
-### 4. Execute approved installs
+### 7. Execute approved installs
 
-Run each approved command, one at a time, surfacing stdout/stderr. After each:
+Run each approved command, surfacing stdout/stderr. After each:
 
-- Re-run the detect command to verify.
-- If still missing, stop and report — don't proceed to the next install.
+- For system installs: re-run the detect command to verify.
+- For venv installs: `"$VENV_DIR/bin/python" -c "import <pkg>"` to verify importability.
+- If verification fails, stop and report — don't proceed to the next install.
 
-### 5. Final verification
-
-After installs complete, re-run every detect command and print a clean status table:
+### 8. Final verification table
 
 ```
 Status:
   ✓ ffmpeg
-  ✓ python3
-  ✓ librosa
-  ✓ numpy
-  ✓ deepfilternet
-  ✓ parselmouth (optional)
+  ✓ uv
+  ✓ venv at <VENV_DIR>
+  ✓ librosa (in venv)
+  ✓ numpy (in venv)
+  ✓ scipy (in venv)
+  ✓ deepfilternet (deepFilter binary at <VENV_DIR>/bin/deepFilter)
+  ✓ matplotlib (in venv, optional)
+  ✓ parselmouth (in venv, optional)
   · silero-vad (optional, not installed)
   · sox (optional, not installed)
   · typst (optional, not installed)
 ```
 
-If any **required** dep is still missing, tell the user the plugin won't function fully and stop with a non-zero exit indication.
+If any **required** dep is still missing, stop with a clear message — the plugin won't function fully.
+
+## Plugin-side conventions (for other commands and skills)
+
+Other commands in this plugin must invoke Python via the venv interpreter, not system `python3`:
+
+```bash
+PYTHON="$PLUGIN_DATA_DIR/venv/bin/python"
+DEEPFILTER="$PLUGIN_DATA_DIR/venv/bin/deepFilter"
+
+"$PYTHON" - <<'PY'
+import librosa, numpy as np
+...
+PY
+
+"$DEEPFILTER" "<input>" -o "<out-dir>"
+```
+
+If the venv doesn't exist when one of those commands runs, the command should refuse and tell the user to run `/audio-production:install-deps`.
 
 ## Idempotence
 
-Running this skill repeatedly is safe — it only installs what's missing. Use it as a "doctor" command at any time.
+Running this skill repeatedly is safe — `uv venv` is a no-op if the venv exists, and `uv pip install` skips already-satisfied packages.
+
+To upgrade everything later:
+
+```bash
+"$VENV_DIR/bin/python" -m uv pip install -U librosa numpy scipy deepfilternet
+```
 
 ## Notes
 
-- This skill is the canonical place to teach users how to install the plugin's deps. Other skills/commands that detect a missing dep should point users back here: "Run `/audio-production:install-deps` to install missing tools."
-- Never bypass the user's approval — even on a dev machine, surprise installs break trust.
-- For Python packages, default to user-scope installs (`--user`, `pipx`, `uv tool`) — never global system Python.
+- All Python tooling lives under `<data-dir>/venv/`. Wipe it (`rm -rf "$VENV_DIR"`) and re-run this skill to start fresh.
+- System Python is never modified.
+- `uv` is preferred over `pip`, `pipx`, or `apt`-installed Python packages because it sidesteps PEP 668, resolves dependencies fast, and produces a self-contained, portable venv.
 - No MCPs, no network calls beyond the package managers' own.

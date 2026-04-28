@@ -73,9 +73,9 @@ If present, fill in any missing fields with defaults; leave existing values alon
 
 ### 4. Verify dependencies
 
-Hand off to `/audio-production:install-deps` for a full dep audit and (with user approval) installation. That skill checks `ffmpeg`, `librosa`, `numpy`, `deepfilternet`, plus optional `parselmouth`, `silero-vad`, `sox`, `typst`.
+Hand off to `/audio-production:install-deps`. That skill provisions a plugin-owned uv venv at `<data-dir>/venv/`, installs all Python tooling into it, and verifies system binaries (ffmpeg, etc.). Every Python-using command in this plugin invokes `<data-dir>/venv/bin/python` directly — system Python is never touched.
 
-If the user declines to install anything, only continue if at minimum `ffmpeg`, `librosa`, and `numpy` are present — those are required to register a mic and profile a voice. `deepfilternet` is only needed for `denoise` and `polish --mode=noisy`, so its absence is non-blocking for onboarding.
+If the user declines optional installs, onboarding can continue as long as ffmpeg, the venv, and `librosa`/`numpy`/`scipy` are present (required for mic registration and voice profiling). `deepfilternet` is only needed for `denoise` and `polish --mode=noisy`, so its absence is non-blocking for onboarding.
 
 ### 5. Register the mic
 

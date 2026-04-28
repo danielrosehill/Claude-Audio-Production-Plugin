@@ -23,20 +23,22 @@ For transcription-only flows, denoising is usually unnecessary — modern ASR ha
 
 ### 1. Verify the engine
 
-**DeepFilterNet** — check the `deepFilter` binary:
+**DeepFilterNet** — invoke the venv-installed binary directly:
 
 ```bash
-which deepFilter || command -v deepFilter
+PLUGIN_DATA_DIR="${CLAUDE_USER_DATA:-${XDG_DATA_HOME:-$HOME/.local/share}/claude-plugins}/audio-production"
+DEEPFILTER="$PLUGIN_DATA_DIR/venv/bin/deepFilter"
+test -x "$DEEPFILTER" || { echo "deepFilter missing. Run /audio-production:install-deps."; exit 1; }
 ```
 
-If missing, tell the user to run `/audio-production:install-deps` and stop. Don't auto-install — that skill walks the user through approved installs.
+Use `$DEEPFILTER` everywhere this command shells out — never rely on PATH lookup.
 
 **afftdn** — built into ffmpeg, no check needed beyond `which ffmpeg`.
 
 ### 2. DeepFilterNet path
 
 ```bash
-deepFilter "<input>" -o "<out-dir>"
+"$DEEPFILTER" "<input>" -o "<out-dir>"
 ```
 
 `deepFilter` writes `<input-stem>_DeepFilterNet3.wav` into the output directory. Move/rename to the canonical `<stem>.denoised.<ext>` afterward:

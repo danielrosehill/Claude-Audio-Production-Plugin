@@ -21,14 +21,21 @@ If `<MICS_DIR>/<mic-id>/sample.wav` doesn't exist and no `--sample` was passed, 
 
 ## Procedure
 
-### 1. Verify dependencies
+### 1. Resolve the plugin Python interpreter
 
 ```bash
-python3 -c "import librosa, numpy" 2>/dev/null || {
-  echo "librosa not installed. Run /audio-production:install-deps to install missing tools."
+PYTHON="$PLUGIN_DATA_DIR/venv/bin/python"
+test -x "$PYTHON" || {
+  echo "Plugin venv missing. Run /audio-production:install-deps first."
+  exit 1
+}
+"$PYTHON" -c "import librosa, numpy" 2>/dev/null || {
+  echo "librosa missing from venv. Run /audio-production:install-deps."
   exit 1
 }
 ```
+
+Use `$PYTHON` (not system `python3`) for every Python invocation in this command.
 
 ### 2. Refresh the canonical sample (if `--sample` was passed)
 
