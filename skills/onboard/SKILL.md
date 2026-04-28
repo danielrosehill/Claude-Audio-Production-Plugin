@@ -1,32 +1,39 @@
 ---
 name: onboard
-description: First-run setup for the audio-production plugin. Provisions the persistent user-data directory, captures a reference voice sample from the user, profiles it, and saves seed EQ presets (podcast, vocals, spoken-word). Run this once before using profile-voice, suggest-eq, or apply-preset. Re-run any time to refresh the voice profile.
+description: First-run setup for the audio-production plugin. Provisions the persistent user-data directory, registers the user's primary microphone, captures a 3-min sample, profiles it, seeds default EQ presets, and produces 1-min A/B auditions. Run once before using profile-voice, suggest-eq, or apply-preset. Re-run any time to refresh.
 disable-model-invocation: true
-allowed-tools: Bash(mkdir *), Bash(cp *), Bash(test *), Bash(ls *), Bash(cat *), Bash(ffprobe *), Bash(ffmpeg *), Bash(python3 *), Bash(pip *), Bash(pip3 *), Read, Write
+allowed-tools: Bash(mkdir *), Bash(cp *), Bash(test *), Bash(ls *), Bash(cat *), Bash(date *), Bash(ffprobe *), Bash(ffmpeg *), Bash(python3 *), Bash(pip *), Bash(pip3 *), Read, Write
 ---
 
 # Onboard — Audio-Production Plugin
 
-This skill provisions the plugin's persistent user-data directory and captures the user's voice profile. Everything that follows (EQ suggestion, preset application, audio chains) reads from the artifacts created here.
+This skill provisions the plugin's persistent user-data directory and walks the user through registering their first microphone profile.
+
+Profiles are mic-bound: each registered mic gets its own sample, analysis, and presets, so the user can switch microphones without retraining the whole pipeline.
 
 ## Data directory convention
 
-Resolve the plugin's data directory as `$CLAUDE_USER_DATA/audio-production/` if `CLAUDE_USER_DATA` is set; otherwise `$XDG_DATA_HOME/claude-plugins/audio-production/` if `XDG_DATA_HOME` is set; otherwise `~/.local/share/claude-plugins/audio-production/`. Create it if it doesn't exist.
+Resolve the plugin's data directory as `$CLAUDE_USER_DATA/audio-production/` if `CLAUDE_USER_DATA` is set; otherwise `$XDG_DATA_HOME/claude-plugins/audio-production/` if `XDG_DATA_HOME` is set; otherwise `~/.local/share/claude-plugins/audio-production/`.
 
 Layout:
 
 ```
 <data-dir>/
-  config.json                 # plugin defaults (loudness target, workspace parent, …)
-  voice/
-    sample.wav                # user reference sample (canonical copy)
-    analysis.json             # spectral profile from profile-voice
+  config.json                 # defaults — loudness target, default_mic_id, …
+  mics/
+    <mic-id>/
+      metadata.json           # mic name, make/model, interface, room notes
+      sample.wav              # 3-min canonical sample
+      sample-source.txt       # original source path + offset
+      analysis.json           # spectral profile
   presets/
-    <name>.json               # EQ + dynamics presets
-  state/                      # runtime state (last-applied preset, etc.)
+    <name>.json               # has mic_id field
+  auditions/
+    <preset>__<mic-id>__<ts>/ # before.wav / after.wav / diff.txt
+  state/                      # runtime state
 ```
 
-Never write plugin data under `~/.claude/`. That is Claude Code's install surface and is overwritten on plugin update.
+Never write plugin data under `~/.claude/`. That's the install surface and is overwritten on plugin update.
 
 ## Procedure
 
@@ -34,107 +41,78 @@ Never write plugin data under `~/.claude/`. That is Claude Code's install surfac
 
 ```bash
 PLUGIN_DATA_DIR="${CLAUDE_USER_DATA:-${XDG_DATA_HOME:-$HOME/.local/share}/claude-plugins}/audio-production"
-mkdir -p "$PLUGIN_DATA_DIR/voice" "$PLUGIN_DATA_DIR/presets" "$PLUGIN_DATA_DIR/state"
+mkdir -p "$PLUGIN_DATA_DIR/mics" "$PLUGIN_DATA_DIR/presets" "$PLUGIN_DATA_DIR/auditions" "$PLUGIN_DATA_DIR/state"
 ```
 
-### 2. Migrate any legacy data (one-time)
+### 2. Migrate any legacy data
 
-If `~/.claude/audio-production/` or `~/.claude/plugins/audio-production/data/` exists, move contents into `$PLUGIN_DATA_DIR` and delete the legacy directory. Log what was moved.
+If `<data-dir>/voice/` exists from a pre-mic-aware version of the plugin:
+
+- Ask the user for an id and friendly name to attach to the existing data (suggest `default` if they don't care).
+- Move `<data-dir>/voice/sample.wav` → `<data-dir>/mics/<mic-id>/sample.wav`.
+- Move `<data-dir>/voice/analysis.json` → `<data-dir>/mics/<mic-id>/analysis.json`.
+- Synthesise a `<data-dir>/mics/<mic-id>/metadata.json` with whatever the user can recall.
+- For each existing preset in `<data-dir>/presets/`, add a `mic_id` field pointing at the new mic.
+- Remove the empty `<data-dir>/voice/` directory.
 
 ### 3. Write or update `config.json`
 
-If `config.json` doesn't exist, create it with sensible defaults:
+If absent, create:
 
 ```json
 {
   "loudness_target_lufs": -16,
   "true_peak_ceiling_dbtp": -1,
   "default_workspace_parent": "~/repos/github/my-repos",
-  "default_use_case": "podcast"
+  "default_use_case": "podcast",
+  "default_mic_id": null
 }
 ```
 
-If it exists, leave existing values alone — only fill in any new fields with defaults.
+If present, fill in any missing fields with defaults; leave existing values alone.
 
 ### 4. Verify Python audio dependencies
-
-The voice-profiling pipeline needs `librosa` and `numpy`. `parselmouth` (Praat) is optional for formant analysis.
 
 ```bash
 python3 -c "import librosa, numpy" 2>/dev/null
 ```
 
-If the import fails, tell the user the install command:
+If the import fails, surface the install command and stop:
 
 ```
 pip install --user librosa numpy
 # optional: pip install --user praat-parselmouth
 ```
 
-Do **not** install automatically — let the user choose their Python environment.
+Do not install automatically.
 
-### 5. Capture a reference voice sample
+### 5. Register the mic
 
-Ask the user for a path to a clean voice sample (30 seconds to a few minutes; mono or stereo; any common format). Guidance to surface:
+Hand off to `/audio-production:add-mic`. Walk the user through:
 
-- Should be the user speaking naturally, no background music.
-- Recorded with the microphone they typically use for production.
-- WAV / FLAC preferred; MP3/Opus acceptable but lossy.
+- A kebab-case **mic id** (used as directory name). Suggest something descriptive: `sm7b-desk`, `at2020-usb`, `lav-zoom-h6`.
+- A **friendly name** for display.
+- **Make / model** (e.g. "Shure SM7B").
+- **Interface** (optional — e.g. "Focusrite Scarlett 2i2", "USB direct", "Zoom H6 channel 1").
+- **Source recording** — path to a clean voice sample of the user speaking with this mic. At least 3 minutes preferred.
+- **Environment notes** (optional — room treatment, mic distance, gain setting).
 
-Copy (don't move) the sample to `$PLUGIN_DATA_DIR/voice/sample.wav`. If the source isn't WAV, transcode with ffmpeg:
+`add-mic` extracts a 3-min sample from the source via `/audio-production:extract-sample`, runs `/audio-production:profile-voice`, seeds presets via `/audio-production:suggest-eq`, and sets `default_mic_id` if it was unset.
 
-```bash
-ffmpeg -y -i "<source>" -ac 1 -ar 48000 -c:a pcm_s16le "$PLUGIN_DATA_DIR/voice/sample.wav"
-```
+### 6. Audition the seeded presets
 
-### 6. Run the profiling step
+For the `podcast`, `vocals`, and `spoken-word` presets just created, invoke `/audio-production:audition-preset` to produce 1-min A/B WAV pairs the user can play back to evaluate the suggestion.
 
-Invoke `/audio-production:profile-voice` (or run its logic inline) against `voice/sample.wav`. This writes `voice/analysis.json` containing:
+### 7. Report
 
-- F0 (fundamental frequency) median and range
-- Spectral centroid, rolloff
-- Sibilance band (5–9 kHz) average energy
-- Mud band (200–500 Hz) average energy
-- Top 3 resonant peaks below 1 kHz
-- Optional: F1/F2 formants if `parselmouth` is installed
-
-### 7. Seed default presets
-
-For each of `podcast`, `vocals`, `spoken-word`, invoke `/audio-production:suggest-eq --use-case=<case>` to generate and save a starting preset under `presets/<case>.json`.
-
-Each preset JSON should look like:
-
-```json
-{
-  "name": "podcast",
-  "use_case": "podcast",
-  "derived_from": "voice/analysis.json",
-  "created_at": "<ISO timestamp>",
-  "filters": {
-    "highpass_hz": 80,
-    "bands": [
-      {"freq_hz": 250, "gain_db": -3, "q": 1.0, "reason": "tame mud"},
-      {"freq_hz": 3000, "gain_db": 2, "q": 0.9, "reason": "presence"},
-      {"freq_hz": 6500, "gain_db": -2, "q": 4.0, "reason": "sibilance control"}
-    ],
-    "deesser": {"freq_hz": 6500, "threshold_db": -24, "ratio": 3.0},
-    "compressor": {"threshold_db": -20, "ratio": 3.0, "attack_ms": 5, "release_ms": 80, "makeup_db": 3}
-  },
-  "loudness_target_lufs": -16
-}
-```
-
-### 8. Report
-
-Tell the user:
-
-- The data directory path.
-- That the voice sample was saved and analysed.
-- Which presets were seeded and how to inspect them (`/audio-production:list-presets`).
-- That the user can re-run this skill any time to refresh the profile.
-- That all plugin user data lives under one root and can be backed up by copying that directory.
+- Data directory path.
+- Registered mic summary (id, name, make/model).
+- Sample location and a one-line read of the analysis (pitch median, brightness, mud-vs-sibilance).
+- Presets created and their audition paths.
+- Note that re-running this skill or `/audio-production:add-mic` adds another mic profile rather than overwriting.
+- Note that all plugin user data lives under one root and can be backed up by copying that directory.
 
 ## Notes
 
-- Never reference any user-specific MCP server in this skill — this plugin is publicly distributed. All audio analysis must run via standard CLI tools (`ffmpeg`, `python3 + librosa`).
-- If the user declines to provide a voice sample, still create the data dir and `config.json`, and seed *generic* presets (no `derived_from`). Mark them with `"derived_from": null` so other commands know they're not personalised.
+- Public plugin → never reference user-specific MCPs. All audio analysis runs via standard CLI tools (`ffmpeg`, `python3 + librosa`).
+- If the user declines to register a mic, still create the data dir and `config.json`, leave `default_mic_id` null, and tell them they can register one any time with `/audio-production:add-mic`.

@@ -18,14 +18,14 @@ If `$PRESETS_DIR` doesn't exist or is empty, tell the user to run `/audio-produc
 For each `*.json` in `$PRESETS_DIR`:
 
 - Parse the JSON.
-- Extract: `name`, `use_case`, `created_at`, HPF freq, band count, de-esser presence, compressor ratio, loudness target.
-- Note whether `derived_from` is `voice/analysis.json` (personalised) or `null` (generic).
+- Extract: `name`, `use_case`, `mic_id`, `created_at`, HPF freq, band count, de-esser presence, compressor ratio, loudness target.
+- Note whether `derived_from` references a `mics/<id>/analysis.json` (personalised) or is `null` (generic).
 
 Render as a table:
 
-| Name | Use case | HPF | Bands | De-ess | Comp | Target | Personalised | Created |
+| Name | Use case | Mic | HPF | Bands | De-ess | Comp | Target | Created |
 |---|---|---|---|---|---|---|---|---|
-| podcast | podcast | 80 Hz | 3 | yes | 3:1 | -16 LUFS | yes | 2026-04-28 |
+| podcast--sm7b-desk | podcast | sm7b-desk | 80 Hz | 3 | yes | 3:1 | -16 LUFS | 2026-04-28 |
 
 End with a hint:
 

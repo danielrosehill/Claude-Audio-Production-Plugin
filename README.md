@@ -10,11 +10,15 @@ For transcription, diarisation, or transcript export, install the companion **[C
 
 ### Voice profiling & EQ workflow
 
-The plugin captures a reference sample of the user's voice once, analyses its spectral characteristics, and uses that profile to generate tailored EQ + dynamics presets. Presets are saved to a persistent user-data directory and can be applied to future audio.
+The plugin captures a reference voice sample for each microphone the user records with, analyses its spectral characteristics, and generates tailored EQ + dynamics presets that are bound to that mic. Profiles, presets, and A/B auditions all persist in a versioned user-data directory.
 
-- `/audio-production:onboard` — first-run setup. Creates the user-data directory, captures a voice sample, runs profiling, and seeds default presets (podcast, vocals, spoken-word).
-- `/audio-production:profile-voice` — analyse the saved (or a new) sample with `librosa`. Writes F0, spectral centroid, sibilance/mud band energy, resonant peaks, and (optionally) formants to `voice/analysis.json`.
-- `/audio-production:suggest-eq --use-case=<podcast|vocals|spoken-word|broadcast>` — translate the analysis into an EQ + dynamics preset. Saves to `presets/<name>.json`.
+- `/audio-production:onboard` — first-run setup. Creates the user-data directory and walks through registering the user's primary microphone.
+- `/audio-production:add-mic` — register a new mic (id, make/model, interface, environment notes), extract a 3-min sample from a source recording, profile it, and seed presets bound to it.
+- `/audio-production:list-mics` — show all registered mics and the presets bound to each.
+- `/audio-production:extract-sample <input>` — auto-pick the loudest 3-min window from a longer recording.
+- `/audio-production:profile-voice [--mic=<id>]` — analyse a mic's reference sample with `librosa`. Writes F0, spectral centroid, sibilance/mud band energy, resonant peaks, and (optionally) formants.
+- `/audio-production:suggest-eq --use-case=<podcast|vocals|spoken-word|broadcast> [--mic=<id>]` — translate the analysis into an EQ + dynamics preset and emit a 1-min A/B audition.
+- `/audio-production:audition-preset <preset>` — emit a fresh 1-min before/after WAV pair for any saved preset.
 - `/audio-production:list-presets` — list saved presets with a one-line summary of each chain.
 - `/audio-production:apply-preset <name> <input>` — run a saved preset against an audio file via ffmpeg.
 
@@ -61,7 +65,7 @@ Scaffolds a new audio workspace (CLAUDE.md + variant-specific folder tree), pers
 
 ## User-data directory
 
-The plugin's voice profile and EQ presets persist outside the install directory so plugin updates never clobber them. Resolution order:
+The plugin's mic profiles, EQ presets, and auditions persist outside the install directory so plugin updates never clobber them. Resolution order:
 
 1. `$CLAUDE_USER_DATA/audio-production/` if `CLAUDE_USER_DATA` is set
 2. else `$XDG_DATA_HOME/claude-plugins/audio-production/` if `XDG_DATA_HOME` is set
@@ -71,18 +75,21 @@ Layout:
 
 ```
 <data-dir>/
-  config.json                 # plugin defaults (loudness target, workspace parent)
-  voice/
-    sample.wav                # reference sample
-    analysis.json             # spectral profile
+  config.json                       # defaults — loudness target, default_mic_id, …
+  mics/
+    <mic-id>/
+      metadata.json                 # name, make/model, interface, room notes
+      sample.wav                    # 3-min canonical sample
+      sample-source.txt             # original source path + offset
+      analysis.json                 # spectral profile
   presets/
-    podcast.json
-    vocals.json
-    spoken-word.json
-  state/                      # runtime state
+    <name>.json                     # has mic_id field linking back
+  auditions/
+    <preset>__<mic-id>__<ts>/       # before.wav / after.wav / diff.txt
+  state/                            # runtime state
 ```
 
-Back up the whole directory to back up every personalisation the plugin holds.
+Profiles are mic-bound, so multiple mics can coexist (desk SM7B, lav at the studio, USB condenser on the road) with their own presets. Back up the whole directory to back up every personalisation the plugin holds.
 
 ## Pattern
 
@@ -107,7 +114,7 @@ See [PLAN.md in Claude-Workspace-Reshaping-190426](https://github.com/danielrose
 /plugin install audio-production
 ```
 
-Then run `/audio-production:onboard` to capture your voice sample and seed the user-data directory.
+Then run `/audio-production:onboard` to register your primary microphone and seed the user-data directory.
 
 ## License
 

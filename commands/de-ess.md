@@ -17,14 +17,13 @@ Reduce sibilance on a voice recording.
 
 ## Procedure
 
-### 1. Optionally read voice analysis
+### 1. Optionally read a mic's voice analysis
 
 ```bash
 PLUGIN_DATA_DIR="${CLAUDE_USER_DATA:-${XDG_DATA_HOME:-$HOME/.local/share}/claude-plugins}/audio-production"
-ANALYSIS="$PLUGIN_DATA_DIR/voice/analysis.json"
 ```
 
-If the file exists and `--freq` was not explicitly passed, prefer a frequency derived from the analysis (the bin with the highest sustained energy in 5–9 kHz). Otherwise default to 6500 Hz.
+If a `--mic=<mic-id>` flag is passed (or `default_mic_id` is set in `config.json`) and `--freq` was not explicitly passed, read `<PLUGIN_DATA_DIR>/mics/<mic-id>/analysis.json` and use its `sibilance_peak_hz` value. Otherwise default to 6500 Hz.
 
 ### 2. Build filter chain
 

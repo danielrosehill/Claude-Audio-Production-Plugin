@@ -1,21 +1,23 @@
 ---
-description: Analyse a voice sample and write a spectral profile (F0, sibilance, mud, resonant peaks) to the plugin's user-data directory. Run after /audio-production:onboard or any time the user wants to refresh the profile (new mic, new room).
+description: Analyse a mic's reference sample and write a spectral profile (F0, sibilance, mud, resonant peaks) into the plugin's user-data directory. Bound to a specific mic — re-run after changing mic, room, or capture chain.
 ---
 
-Analyse the user's reference voice sample and persist the result.
+Analyse a mic's reference sample and persist the result.
 
-## Inputs
-
-`$ARGUMENTS` may contain:
-- A path to an audio file. If omitted, use the canonical sample at `<data-dir>/voice/sample.wav`.
-
-## Resolve the data directory
+## Resolve paths
 
 ```bash
 PLUGIN_DATA_DIR="${CLAUDE_USER_DATA:-${XDG_DATA_HOME:-$HOME/.local/share}/claude-plugins}/audio-production"
+MICS_DIR="$PLUGIN_DATA_DIR/mics"
 ```
 
-If `<data-dir>/voice/sample.wav` doesn't exist and no path was passed, tell the user to run `/audio-production:onboard` first.
+## Inputs
+
+`$ARGUMENTS`:
+- `--mic=<mic-id>` — the mic to profile. Defaults to `default_mic_id` from `config.json`.
+- `--sample=<path>` — optional. If given, copy/transcode this file into `<MICS_DIR>/<mic-id>/sample.wav` (overwriting) before analysing. Useful when re-profiling with a fresh recording.
+
+If `<MICS_DIR>/<mic-id>/sample.wav` doesn't exist and no `--sample` was passed, tell the user to run `/audio-production:add-mic` first.
 
 ## Procedure
 
@@ -28,27 +30,27 @@ python3 -c "import librosa, numpy" 2>/dev/null || {
 }
 ```
 
-### 2. If the sample is not the canonical one, copy it
-
-If `$ARGUMENTS` provided a path, transcode/copy it to `<data-dir>/voice/sample.wav` (mono, 48 kHz, PCM 16-bit) so future runs are reproducible:
+### 2. Refresh the canonical sample (if `--sample` was passed)
 
 ```bash
-ffmpeg -y -i "<input>" -ac 1 -ar 48000 -c:a pcm_s16le "$PLUGIN_DATA_DIR/voice/sample.wav"
+ffmpeg -y -i "<sample>" -ac 1 -ar 48000 -c:a pcm_s16le "$MICS_DIR/<mic-id>/sample.wav"
 ```
 
-### 3. Run the analysis
+If the source is longer than 5 minutes, hand off to `/audio-production:extract-sample` first to pick a 3-min window — don't analyse the whole thing.
 
-Use a short Python program (write it inline via heredoc — do not require a separate script file) that:
+### 3. Run analysis
 
-- Loads `<data-dir>/voice/sample.wav` with `librosa.load(..., sr=48000, mono=True)`.
-- Computes:
-  - **F0**: `librosa.pyin` with `fmin=70, fmax=400`. Report median, 5th–95th percentile range. Strip NaNs before stats.
-  - **Spectral centroid**: `librosa.feature.spectral_centroid` mean.
-  - **Spectral rolloff**: `librosa.feature.spectral_rolloff` mean (rolloff=0.85).
-  - **Sibilance band energy**: mean magnitude in 5000–9000 Hz from an STFT (`n_fft=4096, hop_length=1024`), expressed in dBFS.
-  - **Mud band energy**: same, in 200–500 Hz, dBFS.
-  - **Resonant peaks**: average the magnitude spectrum across frames; smooth with a 5-bin moving average; find the top 3 peaks below 1000 Hz with `scipy.signal.find_peaks` (or numpy if scipy isn't available — argpartition on local maxima).
-- If `parselmouth` is importable, also compute median F1/F2 formants (`praat`-based). Otherwise omit those fields.
+Inline Python (heredoc — no separate script file). Load `<MICS_DIR>/<mic-id>/sample.wav` with `librosa.load(..., sr=48000, mono=True)`. Compute:
+
+- **F0**: `librosa.pyin(..., fmin=70, fmax=400)`. Median + 5th/95th percentiles, NaNs stripped.
+- **Spectral centroid**: `librosa.feature.spectral_centroid` mean.
+- **Spectral rolloff**: `librosa.feature.spectral_rolloff` mean (rolloff=0.85).
+- **Band energies**: STFT (`n_fft=4096`, `hop_length=1024`); mean magnitude in 200–500 Hz (mud) and 5000–9000 Hz (sibilance), expressed in dBFS.
+- **Resonant peaks**: time-averaged magnitude spectrum, smoothed with a 5-bin moving average; top 3 local maxima below 1 kHz.
+- **Sibilance peak**: 5–9 kHz bin with the highest sustained energy.
+- **Formants** (optional): if `parselmouth` imports, F1/F2 medians from the first 60s.
+
+If `librosa.pyin` is too slow (long sample, slow CPU), fall back to `librosa.yin` and note that in the output JSON.
 
 ### 4. Write `analysis.json`
 
@@ -56,9 +58,10 @@ Schema:
 
 ```json
 {
-  "source_path": "<data-dir>/voice/sample.wav",
+  "mic_id": "<mic-id>",
+  "source_path": "<MICS_DIR>/<mic-id>/sample.wav",
   "analysed_at": "<ISO timestamp>",
-  "duration_seconds": 92.4,
+  "duration_seconds": 180.0,
   "sample_rate": 48000,
   "f0_hz": {"median": 118.2, "p05": 88.0, "p95": 168.3},
   "spectral_centroid_hz": 1842.0,
@@ -68,23 +71,21 @@ Schema:
     "sibilance_5000_9000": -41.7
   },
   "resonant_peaks_hz": [180, 320, 540],
+  "sibilance_peak_hz": 6300,
   "formants_hz": {"f1_median": 520, "f2_median": 1480}
 }
 ```
 
-Write to `<data-dir>/voice/analysis.json`, overwriting any prior version.
+Save to `<MICS_DIR>/<mic-id>/analysis.json`, overwriting any prior version.
 
 ### 5. Report
 
-Print a short human summary:
-
 - Pitch range and median.
-- Whether the voice trends bright or dark (centroid vs typical 1500–2500 Hz spoken-word range).
-- Whether mud or sibilance bands look elevated relative to typical spoken-word baselines.
-- Suggest the user run `/audio-production:suggest-eq` next.
+- Brightness read (centroid vs typical 1500–2500 Hz spoken-word range).
+- Whether mud or sibilance bands look elevated.
+- Suggest `/audio-production:suggest-eq --mic=<mic-id>` next.
 
 ## Notes
 
 - All analysis is local — no MCPs, no network calls.
-- If `librosa.pyin` is too slow on long samples, fall back to `librosa.yin` and note that in the output.
-- Never overwrite the user's source audio file — only `<data-dir>/voice/sample.wav` is plugin-owned.
+- Never overwrite the user's source audio file — only `<MICS_DIR>/<mic-id>/sample.wav` is plugin-owned.

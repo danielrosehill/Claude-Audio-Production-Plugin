@@ -1,7 +1,7 @@
 {
   "name": "audio-production",
-  "version": "1.1.0",
-  "description": "Audio engineering & production primitives — voice profiling, EQ preset suggestion and application, compression, de-essing, normalization, VAD segmentation, mastering, tagging, and podcast assembly. Saves user voice profile and EQ presets to a persistent user-data directory.",
+  "version": "1.2.0",
+  "description": "Audio engineering & production primitives — mic-bound voice profiling, EQ preset suggestion with A/B auditions, compression, de-essing, normalization, VAD segmentation, mastering, tagging, and podcast assembly. Persists mic profiles, presets, and auditions to a versioned user-data directory.",
   "author": {
     "name": "Daniel Rosehill",
     "url": "https://github.com/danielrosehill"
