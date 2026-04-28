@@ -22,14 +22,20 @@ The plugin captures a reference voice sample for each microphone the user record
 - `/audio-production:list-presets` — list saved presets with a one-line summary of each chain.
 - `/audio-production:apply-preset <name> <input>` — run a saved preset against an audio file via ffmpeg.
 
+### One-shot finisher
+
+- `polish <input> [--mode=clean|noisy]` — orchestrates the full chain. `clean` (default): truncate-silence → EQ preset chain → loudnorm. `noisy`: denoise → truncate-silence → EQ preset chain → loudnorm. Writes `<stem>.polished.wav` plus a `.log.txt` audit trail.
+
 ### Audio engineering primitives
 
 - `normalize` — two-pass EBU R128 loudnorm (default target -16 LUFS, configurable)
 - `check-loudness` — measure integrated LUFS, true peak, LRA without modifying the file
+- `denoise` — local-first noise reduction (DeepFilterNet ML, validated; ffmpeg `afftdn` fallback)
 - `compress` — single-band ffmpeg `acompressor` with use-case shortcuts
 - `de-ess` — band-limited dynamic cut for sibilance reduction (ffmpeg-only proxy)
 - `apply-chain` — full chain (HPF → EQ → de-ess → compressor → loudnorm) in one invocation, from a preset or use-case shortcut
 - `trim-silence` — strip leading/trailing silence via `silenceremove`
+- `truncate-silence` — collapse internal silences throughout a recording (validated ffmpeg `silenceremove` tuning, optional silero-vad)
 - `concat-audio` — concat or crossfade intro + body + outro into a single master
 - `convert-format` — convert between WAV / FLAC / MP3 / Opus / AAC with explicit bitrate/sample-rate
 - `tag-audio` — show or set ID3/Vorbis/FLAC tags and embed cover art
@@ -103,7 +109,9 @@ See [PLAN.md in Claude-Workspace-Reshaping-190426](https://github.com/danielrose
 
 - `ffmpeg` and `ffprobe` — required for all audio processing
 - `python3` with `librosa` and `numpy` — required for voice profiling
+- `deepFilter` (DeepFilterNet) — required for ML denoise (`pip install --user deepfilternet` or `uv tool install deepfilternet`)
 - `praat-parselmouth` — optional, enables formant analysis
+- `silero-vad` (Python) — optional, ML-based silence truncation
 - `sox` — optional, used by some `trim-silence` paths
 - `typst` — optional, used by some export paths
 
