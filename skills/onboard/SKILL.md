@@ -71,20 +71,11 @@ If absent, create:
 
 If present, fill in any missing fields with defaults; leave existing values alone.
 
-### 4. Verify Python audio dependencies
+### 4. Verify dependencies
 
-```bash
-python3 -c "import librosa, numpy" 2>/dev/null
-```
+Hand off to `/audio-production:install-deps` for a full dep audit and (with user approval) installation. That skill checks `ffmpeg`, `librosa`, `numpy`, `deepfilternet`, plus optional `parselmouth`, `silero-vad`, `sox`, `typst`.
 
-If the import fails, surface the install command and stop:
-
-```
-pip install --user librosa numpy
-# optional: pip install --user praat-parselmouth
-```
-
-Do not install automatically.
+If the user declines to install anything, only continue if at minimum `ffmpeg`, `librosa`, and `numpy` are present — those are required to register a mic and profile a voice. `deepfilternet` is only needed for `denoise` and `polish --mode=noisy`, so its absence is non-blocking for onboarding.
 
 ### 5. Register the mic
 

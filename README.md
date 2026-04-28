@@ -122,7 +122,10 @@ See [PLAN.md in Claude-Workspace-Reshaping-190426](https://github.com/danielrose
 /plugin install audio-production
 ```
 
-Then run `/audio-production:onboard` to register your primary microphone and seed the user-data directory.
+Then:
+
+1. `/audio-production:install-deps` — audit and install required system tools (ffmpeg, librosa, deepfilternet, …) with explicit approval at each step.
+2. `/audio-production:onboard` — register your primary microphone and seed the user-data directory.
 
 ## License
 

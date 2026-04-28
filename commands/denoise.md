@@ -29,17 +29,7 @@ For transcription-only flows, denoising is usually unnecessary — modern ASR ha
 which deepFilter || command -v deepFilter
 ```
 
-If missing, surface the install command and stop:
-
-```
-uv tool install deepfilternet
-# or
-pipx install deepfilternet
-# or (system-wide)
-pip install --user deepfilternet
-```
-
-Don't auto-install — let the user choose.
+If missing, tell the user to run `/audio-production:install-deps` and stop. Don't auto-install — that skill walks the user through approved installs.
 
 **afftdn** — built into ffmpeg, no check needed beyond `which ffmpeg`.
 

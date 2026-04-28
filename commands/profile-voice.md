@@ -25,7 +25,7 @@ If `<MICS_DIR>/<mic-id>/sample.wav` doesn't exist and no `--sample` was passed, 
 
 ```bash
 python3 -c "import librosa, numpy" 2>/dev/null || {
-  echo "librosa not installed. Install with: pip install --user librosa numpy"
+  echo "librosa not installed. Run /audio-production:install-deps to install missing tools."
   exit 1
 }
 ```
