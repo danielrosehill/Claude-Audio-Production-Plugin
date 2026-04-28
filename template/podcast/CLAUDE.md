@@ -38,8 +38,7 @@ A workspace supporting end-to-end podcast episode production — from raw takes 
 - `/audio-production:assemble-episode` — concat intro + body + outro (with optional crossfades)
 - `/audio-production:export-final` — encode master to MP3, tag ID3, embed cover art, place in `finished/`
 - `/audio-production:mark-uploaded` — move from `finished/` to `uploaded/` with date stamp
-- `/audio-production:transcribe` — transcribe via a transcription MCP or local Whisper
-- `/audio-production:suggest-title-description` — title options, description variants, tags, chapter markers
+- `/audio-production:suggest-title-description` — title options, description variants, tags, chapter markers (transcription itself is handled by the separate `Claude-Transcription-Plugin`)
 - `/audio-production:generate-cover-art` — text-to-image or image-to-image via Fal AI Nano Banana 2
 - `/audio-production:upscale-cover-art` — upscale via Fal AI SeedVR
 - `/audio-production:bake-cover-art` — embed cover art into MP3 without re-encoding audio

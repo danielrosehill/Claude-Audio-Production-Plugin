@@ -4,7 +4,7 @@ description: Generate episode title and description suggestions from a transcrip
 
 Generate title and description suggestions for an episode.
 
-Input (from `$ARGUMENTS` or ask): path to a transcript (`.md` / `.txt`) or show notes file. If only an audio file is given, run `/audio-production:transcribe` first.
+Input (from `$ARGUMENTS` or ask): path to a transcript (`.md` / `.txt`) or show notes file. If only an audio file is given, ask the user to run a transcription first via the `Claude-Transcription-Plugin` and pass the resulting transcript here.
 
 Produce:
 1. **5 title options** — mix of: descriptive, question-form, provocative/hooky, SEO-keyword-led, short-and-punchy. Keep under 70 chars each.

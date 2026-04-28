@@ -1,21 +1,25 @@
 ---
 name: new-workspace
-description: Provision a new audio-production workspace on disk. Use when the user wants to start a new audio engineering project, podcast production repo, or transcript cleanup workspace. Accepts a workspace name and optional variant (audio-engineering | podcast | transcript). Scaffolds the workspace, personalises CLAUDE.md from the user's global memory, and (by default) creates a GitHub repo.
+description: Provision a new audio-production workspace on disk. Use when the user wants to start a new audio engineering project or podcast production repo. Accepts a workspace name and optional variant (audio-engineering | podcast). Scaffolds the workspace, personalises CLAUDE.md from the user's global memory, and (by default) creates a GitHub repo.
 disable-model-invocation: true
 allowed-tools: Bash(mkdir *), Bash(cp *), Bash(cat *), Bash(git init *), Bash(git add *), Bash(git commit *), Bash(gh repo create *), Bash(gh auth status), Bash(git push *), Read
 ---
 
 # Provision Audio-Production Workspace
 
-Creates a new workspace for audio work. This plugin's commands (`/audio-production:normalize`, `/audio-production:vad-segment`, `/audio-production:transcribe`, etc.) are globally available once installed — this skill only provisions the **data scaffold** (CLAUDE.md + folder tree) that those commands read from and write to.
+Creates a new workspace for audio work. This plugin's commands (`/audio-production:normalize`, `/audio-production:vad-segment`, etc.) are globally available once installed — this skill only provisions the **data scaffold** (CLAUDE.md + folder tree) that those commands read from and write to.
+
+Workspace contents (audio files, episode metadata, cover art, notes) live wherever the user chooses — typically `~/repos/github/my-repos/<workspace>/`. The plugin's own user data (default loudness targets, last-used parent path, etc.) lives at `${CLAUDE_USER_DATA:-${XDG_DATA_HOME:-$HOME/.local/share}/claude-plugins}/audio-production/` — see the `data-dir` skill / `config.json` reference below.
+
+For transcription tasks, install and use the `Claude-Transcription-Plugin`.
 
 ## Arguments
 
 `$ARGUMENTS` is parsed as:
 
 - **First positional**: workspace name (kebab-case, used as directory and GitHub repo name). Required.
-- **Second positional** (optional): target parent path. Defaults to `~/repos/github/my-repos`.
-- **`--variant=<audio-engineering|podcast|transcript>`** (optional): which scaffold to copy. Default: `audio-engineering`.
+- **Second positional** (optional): target parent path. Defaults to the `default_workspace_parent` value in the plugin's `config.json`, falling back to `~/repos/github/my-repos`.
+- **`--variant=<audio-engineering|podcast>`** (optional): which scaffold to copy. Default: `audio-engineering`.
 - **`--local-only`** (optional): skip GitHub repo creation and push. Default: create a public GitHub repo and push.
 - **`--private`** (optional): create the GitHub repo as private. Default: public.
 
@@ -24,14 +28,16 @@ Creates a new workspace for audio work. This plugin's commands (`/audio-producti
 ```
 /audio-production:new-workspace interview-cleanup
 /audio-production:new-workspace ai-pod --variant=podcast
-/audio-production:new-workspace meeting-transcripts --variant=transcript --local-only
+/audio-production:new-workspace field-notes --local-only
 ```
 
 ## Procedure
 
 ### 1. Parse arguments
 
-Extract workspace name, target parent path, variant, and flags from `$ARGUMENTS`. If workspace name is missing, ask the user for it. If variant is not one of `audio-engineering`, `podcast`, `transcript`, tell the user which variants are available.
+Extract workspace name, target parent path, variant, and flags from `$ARGUMENTS`. If workspace name is missing, ask the user for it. If variant is not one of `audio-engineering`, `podcast`, tell the user which variants are available.
+
+If no target parent path was passed, read the plugin's `config.json` from `${CLAUDE_USER_DATA:-${XDG_DATA_HOME:-$HOME/.local/share}/claude-plugins}/audio-production/config.json` and use its `default_workspace_parent` field (falling back to `~/repos/github/my-repos` if the file or field is missing).
 
 ### 2. Resolve the scaffold path
 
@@ -62,7 +68,6 @@ Open the new workspace's `CLAUDE.md` and:
 
 - **audio-engineering**: ask for the project focus (e.g. "podcast ep 12 cleanup", "field recording batch normalize"). Write into `CLAUDE.md` under `## Project Context`.
 - **podcast**: ask for show name, default loudness target (default -16 LUFS), and distribution format (default MP3 192 kbps CBR). Write these into `CLAUDE.md`.
-- **transcript**: ask whether speakers are known and, if so, list them for future `/audio-production:diarize` runs.
 
 ### 7. Initialise git and (optionally) publish
 
@@ -88,8 +93,7 @@ Tell the user:
 - Workspace path and variant chosen.
 - Which plugin commands apply:
   - **audio-engineering**: `/audio-production:normalize`, `/audio-production:check-loudness`, `/audio-production:trim-silence`, `/audio-production:concat-audio`, `/audio-production:convert-format`, `/audio-production:tag-audio`, `/audio-production:vad-segment`.
-  - **podcast**: everything above plus `/audio-production:new-episode`, `/audio-production:assemble-episode`, `/audio-production:export-final`, `/audio-production:generate-cover-art`, `/audio-production:upscale-cover-art`, `/audio-production:bake-cover-art`, `/audio-production:mark-uploaded`, `/audio-production:suggest-title-description`, `/audio-production:transcribe`.
-  - **transcript**: `/audio-production:transcribe`, `/audio-production:cleanup-transcript`, `/audio-production:diarize`, `/audio-production:export-transcript`, plus `/audio-production:vad-segment` for chunking long recordings.
+  - **podcast**: everything above plus `/audio-production:new-episode`, `/audio-production:assemble-episode`, `/audio-production:export-final`, `/audio-production:generate-cover-art`, `/audio-production:upscale-cover-art`, `/audio-production:bake-cover-art`, `/audio-production:mark-uploaded`, `/audio-production:suggest-title-description`.
 - Reminder that the workspace is **data** — the user can delete/move it freely without losing the plugin's commands.
 
 ## Notes

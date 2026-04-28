@@ -1,7 +1,7 @@
 {
   "name": "audio-production",
-  "version": "1.0.1",
-  "description": "Audio production primitives — process, normalize, trim, concatenate, VAD-segment, transcribe, diarise, master, tag, and publish — with audio-engineering, podcast, and transcript workspace scaffolds.",
+  "version": "1.1.0",
+  "description": "Audio engineering & production primitives — voice profiling, EQ preset suggestion and application, compression, de-essing, normalization, VAD segmentation, mastering, tagging, and podcast assembly. Saves user voice profile and EQ presets to a persistent user-data directory.",
   "author": {
     "name": "Daniel Rosehill",
     "url": "https://github.com/danielrosehill"
@@ -11,10 +11,14 @@
   "keywords": [
     "audio",
     "podcast",
-    "transcription",
+    "voice-profiling",
+    "eq",
+    "compression",
+    "de-essing",
     "vad",
     "ffmpeg",
     "loudnorm",
-    "ebur128"
+    "ebur128",
+    "librosa"
   ]
 }
