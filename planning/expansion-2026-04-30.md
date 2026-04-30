@@ -22,7 +22,6 @@
 - Stem separation (vocals vs. music — useful when raw recording has music bleed or for isolating speech).
 - Reference-track mastering (match loudness *and* spectral profile of a target track — the "make this episode sound like NPR" move).
 - Onset / beat detection for chapter-marker / cue generation.
-- Time-stretch / pitch-shift without artefacts (slight speed-up of podcast episodes is a common ask; ffmpeg's `atempo` is OK but rubberband is the quality option).
 
 ## Recommended additions
 
@@ -46,17 +45,7 @@
   - `match-master` — Use when the user has a reference track (an episode they like, a competitor's podcast, a song) and wants to master a new file to match its loudness curve and spectral profile. Inputs: target file, reference file. Output: mastered WAV.
 - **Install required?** Optional. Add to the install-deps optional bundle.
 
-### 3. `rubberband-cli` — time-stretch / pitch-shift (OPTIONAL)
-
-- **Licence:** GPL-2.0 — wrap-only.
-- **Install:** `sudo apt install rubberband-cli`.
-- **Why it fits:** ffmpeg's `atempo` is workable for ±2× but artefacts at extremes; `rubberband` is the quality option for podcast speed-up (1.05–1.15× is a common authoring choice) and for fixing slow recordings without chipmunk pitch shift.
-- **Why not somewhere else:** Speed/pitch is a production primitive.
-- **Skills to add:**
-  - `time-stretch` — Use when the user wants to speed up or slow down audio while preserving pitch (podcast tightening, slow-talker correction). Single skill takes a tempo ratio.
-- **Install required?** Optional. apt-only, tiny footprint.
-
-### 4. `aubio` — onset / beat / pitch detection (OPTIONAL)
+### 3. `aubio` — onset / beat / pitch detection (OPTIONAL)
 
 - **Licence:** GPL-3.0 — wrap-only.
 - **Install:** `sudo apt install aubio-tools` (provides `aubioonset`, `aubiotrack`, `aubiopitch`, `aubionotes`).
@@ -83,7 +72,6 @@
 Add to the system-binary table:
 
 ```
-| `rubberband` | `which rubberband` | optional | `sudo apt install rubberband-cli` | `brew install rubber-band` |
 | `aubioonset` | `which aubioonset` | optional | `sudo apt install aubio-tools` | `brew install aubio` |
 ```
 
@@ -108,13 +96,11 @@ uv pip install --python "$VENV_DIR/bin/python" demucs
 
 - `skills/isolate-vocals/SKILL.md`
 - `skills/match-master/SKILL.md`
-- `skills/time-stretch/SKILL.md`
 - `skills/detect-cues/SKILL.md`
 
 ### README.md updates
 
 Under "Audio engineering primitives":
-- Add `time-stretch` (rubberband)
 - Add `detect-cues` (aubio)
 - Add `isolate-vocals` (demucs, optional)
 - Add `match-master` (matchering)
@@ -127,9 +113,8 @@ No structural change required. After `install-deps`, recommend the user run the 
 
 Recommended implementation sequence — cheapest-impact-first:
 
-1. **`time-stretch` (rubberband)** — trivial apt install, single skill, satisfies a real recurring need.
-2. **`detect-cues` (aubio)** — apt-only, complements existing chapter-marker work.
-3. **`match-master` (matchering)** — Python-only, but the workflow is more involved (need a reference track). Land after the cheap wins.
-4. **`isolate-vocals` (demucs)** — last. Heavy install (torch + model download), edge-case use, easy to defer.
+1. **`detect-cues` (aubio)** — apt-only, complements existing chapter-marker work.
+2. **`match-master` (matchering)** — Python-only, but the workflow is more involved (need a reference track). Land after the cheap wins.
+3. **`isolate-vocals` (demucs)** — last. Heavy install (torch + model download), edge-case use, easy to defer.
 
 Per Daniel's plans rule: as each item is implemented in subsequent turns, **delete it from this file** rather than ticking it off.

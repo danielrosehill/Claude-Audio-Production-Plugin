@@ -51,6 +51,7 @@ Ask before running. If the user declines, fall back to system pip with `--break-
 | `sox` | `which sox` | optional | `sudo apt install sox` | `brew install sox` |
 | `typst` | `which typst` | optional | `cargo install typst-cli` (or download binary) | `brew install typst` |
 | `auto-editor` | `which auto-editor` | optional | `pipx install auto-editor` (or `uv tool install auto-editor`) | `pipx install auto-editor` |
+| `rubberband` | `which rubberband` | optional | `sudo apt install rubberband-cli` | `brew install rubber-band` |
 
 For each: if missing, stage the install command tagged required/optional.
 
