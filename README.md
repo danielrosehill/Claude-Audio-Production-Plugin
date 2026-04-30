@@ -41,6 +41,7 @@ The plugin captures a reference voice sample for each microphone the user record
 - `silence-cut` — tighten a recording with real cuts (auto-editor); threshold + margin driven, more aggressive than `truncate-silence`
 - `silence-cut-edl` — same detection but emits an editable timeline (Kdenlive / Final Cut / Premiere / Shotcut) for review before render
 - `time-stretch` — speed-up/slow-down preserving pitch, or pitch-shift preserving duration (rubberband, ffmpeg atempo fallback)
+- `detect-cues` — acoustic cue/chapter detection (aubio onset / beat / pitch) — emits sidecar JSON for assembly or chapter authoring
 - `concat-audio` — concat or crossfade intro + body + outro into a single master
 - `convert-format` — convert between WAV / FLAC / MP3 / Opus / AAC with explicit bitrate/sample-rate
 - `tag-audio` — show or set ID3/Vorbis/FLAC tags and embed cover art

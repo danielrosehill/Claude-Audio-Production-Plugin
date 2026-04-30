@@ -52,6 +52,7 @@ Ask before running. If the user declines, fall back to system pip with `--break-
 | `typst` | `which typst` | optional | `cargo install typst-cli` (or download binary) | `brew install typst` |
 | `auto-editor` | `which auto-editor` | optional | `pipx install auto-editor` (or `uv tool install auto-editor`) | `pipx install auto-editor` |
 | `rubberband` | `which rubberband` | optional | `sudo apt install rubberband-cli` | `brew install rubber-band` |
+| `aubio` (`aubioonset`, `aubiotrack`, `aubiopitch`) | `which aubioonset` | optional | `sudo apt install aubio-tools` | `brew install aubio` |
 
 For each: if missing, stage the install command tagged required/optional.
 

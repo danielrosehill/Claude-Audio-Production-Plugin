@@ -21,7 +21,6 @@
 - Smart silence-based cut editing (vs. just collapsing — no edit-decision output).
 - Stem separation (vocals vs. music — useful when raw recording has music bleed or for isolating speech).
 - Reference-track mastering (match loudness *and* spectral profile of a target track — the "make this episode sound like NPR" move).
-- Onset / beat detection for chapter-marker / cue generation.
 
 ## Recommended additions
 
@@ -45,16 +44,6 @@
   - `match-master` — Use when the user has a reference track (an episode they like, a competitor's podcast, a song) and wants to master a new file to match its loudness curve and spectral profile. Inputs: target file, reference file. Output: mastered WAV.
 - **Install required?** Optional. Add to the install-deps optional bundle.
 
-### 3. `aubio` — onset / beat / pitch detection (OPTIONAL)
-
-- **Licence:** GPL-3.0 — wrap-only.
-- **Install:** `sudo apt install aubio-tools` (provides `aubioonset`, `aubiotrack`, `aubiopitch`, `aubionotes`).
-- **Why it fits:** The plugin already has a `suggest-title-description` skill that emits chapter markers — but those come from a transcript. `aubio` lets the plugin emit *acoustic* cue points (topic shifts mark on energy/onset changes, not just word changes) and could feed `assemble-episode` for crossfade alignment.
-- **Why not somewhere else:** Audio-cue detection is production work.
-- **Skills to add:**
-  - `detect-cues` — Use when the user wants automatic cue/chapter timestamps based on audio onsets (energy spikes, silences, transitions) rather than transcript content. Emits a sidecar JSON with timestamps and confidence scores.
-- **Install required?** Optional.
-
 ## Rejected candidates
 
 - **Whisper / whisper.cpp** — Transcription. Different plugin (`Claude-Transcription-Plugin`). Already explicitly punted by the README. Do not absorb.
@@ -72,7 +61,6 @@
 Add to the system-binary table:
 
 ```
-| `aubioonset` | `which aubioonset` | optional | `sudo apt install aubio-tools` | `brew install aubio` |
 ```
 
 Add to the Python optional-packages bundle:
@@ -96,12 +84,10 @@ uv pip install --python "$VENV_DIR/bin/python" demucs
 
 - `skills/isolate-vocals/SKILL.md`
 - `skills/match-master/SKILL.md`
-- `skills/detect-cues/SKILL.md`
 
 ### README.md updates
 
 Under "Audio engineering primitives":
-- Add `detect-cues` (aubio)
 - Add `isolate-vocals` (demucs, optional)
 - Add `match-master` (matchering)
 
@@ -113,8 +99,7 @@ No structural change required. After `install-deps`, recommend the user run the 
 
 Recommended implementation sequence — cheapest-impact-first:
 
-1. **`detect-cues` (aubio)** — apt-only, complements existing chapter-marker work.
-2. **`match-master` (matchering)** — Python-only, but the workflow is more involved (need a reference track). Land after the cheap wins.
-3. **`isolate-vocals` (demucs)** — last. Heavy install (torch + model download), edge-case use, easy to defer.
+1. **`match-master` (matchering)** — Python-only, but the workflow is more involved (need a reference track). Land after the cheap wins.
+2. **`isolate-vocals` (demucs)** — last. Heavy install (torch + model download), edge-case use, easy to defer.
 
 Per Daniel's plans rule: as each item is implemented in subsequent turns, **delete it from this file** rather than ticking it off.
