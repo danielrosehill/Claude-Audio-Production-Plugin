@@ -38,6 +38,8 @@ The plugin captures a reference voice sample for each microphone the user record
 - `apply-chain` — full chain (HPF → EQ → de-ess → compressor → loudnorm) in one invocation, from a preset or use-case shortcut
 - `trim-silence` — strip leading/trailing silence via `silenceremove`
 - `truncate-silence` — collapse internal silences throughout a recording (validated ffmpeg `silenceremove` tuning, optional silero-vad)
+- `silence-cut` — tighten a recording with real cuts (auto-editor); threshold + margin driven, more aggressive than `truncate-silence`
+- `silence-cut-edl` — same detection but emits an editable timeline (Kdenlive / Final Cut / Premiere / Shotcut) for review before render
 - `concat-audio` — concat or crossfade intro + body + outro into a single master
 - `convert-format` — convert between WAV / FLAC / MP3 / Opus / AAC with explicit bitrate/sample-rate
 - `tag-audio` — show or set ID3/Vorbis/FLAC tags and embed cover art
