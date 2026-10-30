@@ -27,6 +27,7 @@ The plugin captures a reference voice sample for each microphone the user record
 
 ### One-shot finisher
 
+- `light-edit` — the whole spoken-word chain on one file: cuts um/uh/hmm with the Uhm frame classifier (no ASR), shortens pauses over 0.8 s, EQ fitted to the speaker's own spectrum, gentle compression, -16 LUFS MP3, plus a JSON edit list of every cut. Measured: recall 0.68 / precision 0.85 on a 22-minute voice note. Upstream: [Podcast-Light-Edit-Chain](https://github.com/danielrosehill/Podcast-Light-Edit-Chain).
 - `polish <input> [--mode=clean|noisy]` — orchestrates the full chain. `clean` (default): truncate-silence → EQ preset chain → loudnorm. `noisy`: denoise → truncate-silence → EQ preset chain → loudnorm. Writes `<stem>.polished.wav` plus a `.log.txt` audit trail.
 
 ### Audio engineering primitives
