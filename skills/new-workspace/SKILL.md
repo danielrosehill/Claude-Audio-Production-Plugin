@@ -11,7 +11,7 @@ Creates a new workspace for audio work. This plugin's commands (`/audio-producti
 
 Workspace contents (audio files, episode metadata, cover art, notes) live wherever the user chooses — typically `~/repos/github/my-repos/<workspace>/`. The plugin's own user data (default loudness targets, last-used parent path, etc.) lives at `${CLAUDE_USER_DATA:-${XDG_DATA_HOME:-$HOME/.local/share}/claude-plugins}/audio-production/` — see the `data-dir` skill / `config.json` reference below.
 
-For transcription tasks, install and use the `Claude-Transcription-Plugin`.
+For transcription tasks, install and use the `Transcription-Pipeline`.
 
 ## Arguments
 

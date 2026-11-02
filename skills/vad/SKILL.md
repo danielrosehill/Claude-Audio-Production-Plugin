@@ -24,7 +24,7 @@ Detect speech regions in an audio file. Two output modes:
 
 ### 1. If the user's goal is "chunk and transcribe"
 
-Hand off to the `Claude-Transcription-Plugin` — it already wraps VAD-aware transcription presets (Gemini, Whisper, AssemblyAI). Only run this skill standalone when the user wants the raw VAD output (timing sidecar or split files) without transcription.
+Hand off to the `Transcription-Pipeline` — its `preprocess-audio` skill trims silence conservatively before transcription (OpenRouter/Gemini, AssemblyAI, local Whisper/Parakeet). Only run this skill standalone when the user wants the raw VAD output (timing sidecar or split files) without transcription.
 
 ### 2. Prefer Silero VAD (Python)
 

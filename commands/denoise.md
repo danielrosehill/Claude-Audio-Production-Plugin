@@ -8,7 +8,7 @@ Reduce background noise in a recording.
 
 This plugin is for production-quality audio, where round-tripping to a cloud denoiser adds latency, cost, and a privacy surface for material that may be unreleased. Local DeepFilterNet (validated in the user's [Crying-Baby-Audio-Scrub](https://github.com/danielrosehill/Crying-Baby-Audio-Scrub) experiment) gives near-cloud quality on CPU. ffmpeg `afftdn` is a zero-deps fallback for stationary noise (HVAC hum, tape hiss).
 
-For transcription-only flows, denoising is usually unnecessary — modern ASR handles moderate noise. Use the companion `Claude-Transcription-Plugin` for those flows.
+For transcription-only flows, denoising is usually unnecessary — modern ASR handles moderate noise. Use the companion `Transcription-Pipeline` for those flows.
 
 ## Inputs
 

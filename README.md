@@ -4,7 +4,7 @@ Claude Code plugin for audio engineering & production — voice profiling, EQ pr
 
 Part of the [danielrosehill Claude Code marketplace](https://github.com/danielrosehill/Claude-Code-Plugins).
 
-For transcription, diarisation, or transcript export, install the companion **[Claude-Transcription-Plugin](https://github.com/danielrosehill/Claude-Transcription-Plugin)**.
+For transcription, diarisation, or transcript export, install the companion **[Transcription-Pipeline](https://github.com/danielrosehill/Transcription-Pipeline)**.
 
 ## What you get
 
