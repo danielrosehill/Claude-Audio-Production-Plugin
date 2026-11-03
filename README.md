@@ -1,5 +1,7 @@
 # audio-production-plugin
 
+**Write-up:** [Claude Code plugins for non-coding work: homelab, data, media and admin](https://blog.danielrosehill.com/posts/claude-code-plugins-non-coding-workflows-xlkdop/)
+
 Claude Code plugin for audio engineering & production — voice profiling, EQ preset suggestion and application, compression, de-essing, normalisation, VAD segmentation, mastering, tagging, and podcast assembly. `ffmpeg`-first primitives plus a personal voice-profile workflow that persists to a versioned user-data directory.
 
 Part of the [danielrosehill Claude Code marketplace](https://github.com/danielrosehill/Claude-Code-Plugins).
