@@ -1,11 +1,11 @@
 ---
 name: distrokid-prep
-description: Use when Daniel wants to prep raw audio tracks for DistroKid upload — convert to FLAC, EBU R128 normalize, and group under distrokid/to-upload/<release>/. Triggers on "distrokid prep", "prep for distrokid", "prep these tracks for upload", "normalize and FLAC for distrokid".
+description: Use when the user wants to prep raw audio tracks for DistroKid upload — convert to FLAC, EBU R128 normalize, and group under distrokid/to-upload/<release>/. Triggers on "distrokid prep", "prep for distrokid", "prep these tracks for upload", "normalize and FLAC for distrokid".
 ---
 
 # DistroKid Release Prep
 
-Take a set of raw input tracks and produce upload-ready FLACs grouped into a release folder under `distrokid/to-upload/<release-slug>/`. Daniel will move the folder into a processed subfolder once he's confirmed the upload.
+Take a set of raw input tracks and produce upload-ready FLACs grouped into a release folder under `distrokid/to-upload/<release-slug>/`. The user will move the folder into a processed subfolder once they have confirmed the upload.
 
 ## Inputs
 
@@ -44,5 +44,5 @@ Verify ffmpeg is installed before starting. If not, tell the user.
 ## After processing
 
 - Print a short table: input filename → output filename → measured input LUFS → final LUFS.
-- Remind Daniel the folder is at `distrokid/to-upload/<release-slug>/` and he should move it into a `processed/` subfolder once uploaded.
+- Remind the user the folder is at `distrokid/to-upload/<release-slug>/` and they should move it into a `processed/` subfolder once uploaded.
 - Do **not** delete or modify the original raw inputs.

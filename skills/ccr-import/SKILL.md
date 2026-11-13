@@ -1,11 +1,15 @@
 ---
 name: ccr-import
-description: Use when Daniel wants to import call recordings from Cube Call Recorder (CCR) on his Android phone via ADB. Triggers on phrases like "import from cube", "grab the CCR recording", "pull yesterday's call from my phone", "import call recorder file", or any request to fetch an audio file produced by Cube Call Recorder from a connected Android device.
+description: Use when the user wants to import call recordings from Cube Call Recorder (CCR) on their Android phone via ADB. Triggers on phrases like "import from cube", "grab the CCR recording", "pull yesterday's call from my phone", "import call recorder file", or any request to fetch an audio file produced by Cube Call Recorder from a connected Android device.
 ---
 
 # CCR Import — Cube Call Recorder → Local Filesystem
 
-Cube Call Recorder ACR (`com.catalinagroup.callrecorder`) is Daniel's default Android call recorder. Both regular phone calls and VoIP/WhatsApp calls are captured.
+Cube Call Recorder ACR (`com.catalinagroup.callrecorder`) is a common Android call recorder and the default this skill assumes. Both regular phone calls and VoIP/WhatsApp calls are captured.
+
+## 1. Load your settings
+
+Read `ccr-import.md` from `$CLAUDE_USER_DATA/audio-production/`, else `~/.claude-user-data/audio-production/`, if it exists; its notes win over the defaults below.
 
 ## Save path
 

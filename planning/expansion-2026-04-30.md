@@ -102,4 +102,4 @@ Recommended implementation sequence — cheapest-impact-first:
 1. **`match-master` (matchering)** — Python-only, but the workflow is more involved (need a reference track). Land after the cheap wins.
 2. **`isolate-vocals` (demucs)** — last. Heavy install (torch + model download), edge-case use, easy to defer.
 
-Per Daniel's plans rule: as each item is implemented in subsequent turns, **delete it from this file** rather than ticking it off.
+Per the user's plans rule: as each item is implemented in subsequent turns, **delete it from this file** rather than ticking it off.

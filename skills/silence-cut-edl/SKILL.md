@@ -7,6 +7,10 @@ description: Use when the user wants the silence-cut decisions as an editable ti
 
 Detect silent sections with `auto-editor` and emit an editable timeline file instead of a finished audio render. Useful when the user wants final-say control: review the cut points in their editor, nudge any aggressive cuts, then render from the editor.
 
+## 1. Load your settings
+
+Read `silence-cut-edl.md` from `$CLAUDE_USER_DATA/audio-production/`, else `~/.claude-user-data/audio-production/`, if it exists; its notes win over the defaults below.
+
 ## When to use
 
 - The user wants to review cuts before committing.
@@ -20,7 +24,7 @@ Do **not** use this skill when:
 ## Inputs
 
 1. **Input file** — required.
-2. **Editor target** — one of: `kdenlive` (default — Daniel's editor), `final-cut-pro`, `premiere`, `shotcut`, `resolve`, `clip-sequence` (raw cut list as JSON).
+2. **Editor target** — one of: `kdenlive` (default), `final-cut-pro`, `premiere`, `shotcut`, `resolve`, `clip-sequence` (raw cut list as JSON).
 3. **Threshold** — same semantics as `silence-cut`. Default `4%`.
 4. **Margin** — same semantics. Default `0.2s`.
 5. **Output path** — defaults to `<input-stem>.<editor-ext>` next to the input. Extension is editor-dependent (`.kdenlive`, `.fcpxml`, `.xml`, `.mlt`, `.json`).
