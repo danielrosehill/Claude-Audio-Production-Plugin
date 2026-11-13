@@ -5,7 +5,7 @@ Those are the reference; a reference filler counts as caught if any filler cut o
 cut counts as correct if it overlaps a reference filler. A cut that overlaps a non-filler word is
 reported as a possible overcut (it may have clipped the word's edge or removed a real word).
 
-  with-secrets uv run python -I scripts/eval_fillers.py <original-audio> <out.mp3.edits.json> [--transcript t.json]
+  uv run python -I scripts/eval_fillers.py <original-audio> <out.mp3.edits.json> [--transcript t.json]
 
 The audio is uploaded to AssemblyAI. Pass --transcript to reuse a saved response.
 """
@@ -22,8 +22,15 @@ FILLERS = {"um", "uh", "hmm", "mm", "er", "ah", "uhm", "umm", "mhm"}
 API = "https://api.assemblyai.com/v2"
 
 
+def _need_key():
+    k = os.environ.get("ASSEMBLYAI_API_KEY")
+    if not k:
+        raise SystemExit("error: set ASSEMBLYAI_API_KEY in the environment (from your own secrets manager or shell)")
+    return k
+
+
 def call(path, data=None, raw=False):
-    req = urllib.request.Request(API + path, data=data, headers={"authorization": os.environ["ASSEMBLYAI_API_KEY"]})
+    req = urllib.request.Request(API + path, data=data, headers={"authorization": _need_key()})
     if data is not None and not raw:
         req.add_header("content-type", "application/json")
     with urllib.request.urlopen(req) as r:
